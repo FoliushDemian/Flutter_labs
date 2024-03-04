@@ -1,17 +1,6 @@
-# my_project
+![image](https://github.com/FoliushDemian/Flutter_labs/assets/93151542/9704f317-b3be-48fe-9c7b-f754e14ac6a1)
+![image](https://github.com/FoliushDemian/Flutter_labs/assets/93151542/bb75342d-11a6-42c4-a285-d1bfc708fca3)
+![image](https://github.com/FoliushDemian/Flutter_labs/assets/93151542/c408de33-162c-48bc-91a5-dcdbdce0b184)
+![image](https://github.com/FoliushDemian/Flutter_labs/assets/93151542/c2d8fb7c-def0-4e57-8a12-72018675f181)
 
-A new Flutter project.
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-"# Flutter_labs" 

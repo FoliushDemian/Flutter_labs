@@ -24,40 +24,44 @@ class CurrencyConverter extends StatefulWidget {
   const CurrencyConverter({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
-  _CurrencyConverterState createState() => _CurrencyConverterState();
+  State<CurrencyConverter> createState() => _CurrencyConverterState();
 }
 
 class _CurrencyConverterState extends State<CurrencyConverter> {
   final TextEditingController _controller = TextEditingController();
-  // ignore: lines_longer_than_80_chars
-  final double _usdToUahRate = 37.5; 
+  final double _usdToUahRate = 37.5;
   String _result = '';
 
   void _convertCurrency() {
-    final input = _controller.text;
+    final input = _controller.text.trim();
+
     if (input.toLowerCase() == 'рубль') {
       setState(() {
         _result = 'Доброго вечора ми з України';
       });
-    } else {
-      final value = double.tryParse(input);
-      if (value != null) {
-        setState(() {
-          _result = 'Сума в гривнях: ${value * _usdToUahRate}';
-        });
-      } else {
-        setState(() {
-          _result = 'Будь ласка, введіть коректне число';
-        });
-      }
+      return;
     }
+
+    // Is input a number
+    final numberRegExp = RegExp(r'^-?\d+(\.\d+)?$');
+    if (!numberRegExp.hasMatch(input)) {
+      setState(() {
+        _result = 'Будь ласка, введіть число';
+      });
+      return;
+    }
+
+    final value = double.parse(input);
+    setState(() {
+      _result = 'Сума в гривнях: ${value * _usdToUahRate}';
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      children: <Widget>[
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
         Padding(
           padding: const EdgeInsets.all(8),
           child: TextField(
@@ -66,7 +70,8 @@ class _CurrencyConverterState extends State<CurrencyConverter> {
               labelText: 'Сума в доларах',
               border: OutlineInputBorder(),
             ),
-            keyboardType: TextInputType.number,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            onSubmitted: (_) => _convertCurrency(),
           ),
         ),
         ElevatedButton(
