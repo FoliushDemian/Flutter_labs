@@ -1,21 +1,56 @@
 import 'package:flutter/material.dart';
+import 'package:my_project/logic/services/transaction_service.dart';
+import 'package:my_project/pages/transactions_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class MainPage extends StatelessWidget {
-  const MainPage({super.key});
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  double? _currentBalance;
+
+  final TextStyle subTextStyle =
+      const TextStyle(fontSize: 16, color: Colors.green);
+  final transactionService = TransactionService();
+
+  @override
+  void initState() {
+    super.initState();
+    transactionService.onBalanceUpdated = _loadBalance;
+    _loadBalance();
+  }
+
+  @override
+  void dispose() {
+    transactionService.onBalanceUpdated = null;
+    super.dispose();
+  }
+
+  void _loadBalance() async {
+    final balance = await getCurrentBalance();
+    if (mounted) {
+      setState(() {
+        _currentBalance = balance;
+      });
+    }
+  }
+
+  Future<double> getCurrentBalance() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getDouble(TransactionService.currentBalanceKey) ?? 5000.00;
+  }
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isTablet = screenWidth >= 600;
-
-    final crossAxisCount = isTablet ? 4 : 2;
-
-    final textStyle = isTablet ? const TextStyle(fontSize: 20,
-        fontWeight: FontWeight.bold,) : const TextStyle(fontSize: 18,
-        fontWeight: FontWeight.bold,);
-    final subTextStyle = isTablet ? const TextStyle(fontSize: 18,
-        color: Colors.green,) :
-    const TextStyle(fontSize: 16, color: Colors.green);
+    final bool isTablet = MediaQuery.of(context).size.width >= 600;
+    final textStyle = TextStyle(
+      fontSize: isTablet ? 20 : 18,
+      fontWeight: FontWeight.bold,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -28,26 +63,23 @@ class MainPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text(
-                'Welcome, User!',
-                style: textStyle,
-              ),
+              Text('Welcome, User!', style: textStyle),
               SizedBox(height: isTablet ? 40 : 20),
               Card(
                 child: Padding(
                   padding: EdgeInsets.all(isTablet ? 24 : 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        'Current Balance',
-                        style: textStyle,
-                      ),
+                    children: [
+                      Text('Current Balance', style: textStyle),
                       const SizedBox(height: 10),
-                      Text(
-                        '\$5,000.00',
-                        style: subTextStyle,
-                      ),
+                      if (_currentBalance != null)
+                        Text(
+                          '\$${_currentBalance!.toStringAsFixed(2)}',
+                          style: subTextStyle,
+                        ),
+                      if (_currentBalance == null)
+                        const CircularProgressIndicator(),
                     ],
                   ),
                 ),
@@ -56,13 +88,10 @@ class MainPage extends StatelessWidget {
               GridView.count(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: crossAxisCount,
-                childAspectRatio: isTablet ? 2 : 3 / 1,
-                children: <Widget>[
+                crossAxisCount: isTablet ? 2 : 1,
+                childAspectRatio: 3 / 1,
+                children: [
                   _dashboardItem(context, 'Transactions', Icons.list_alt),
-                  _dashboardItem(context, 'Budgets',
-                      Icons.account_balance_wallet,),
-                  _dashboardItem(context, 'Reports', Icons.pie_chart),
                   _dashboardItem(context, 'Settings', Icons.settings),
                 ],
               ),
@@ -77,10 +106,16 @@ class MainPage extends StatelessWidget {
     return Card(
       child: InkWell(
         onTap: () {
-          if (title == 'Settings') {
+          if (title == 'Transactions') {
+            Navigator.push(
+              context,
+              MaterialPageRoute<void>(
+                builder: (context) => const TransactionsPage(),
+              ),
+            );
+          } else if (title == 'Settings') {
             Navigator.pushNamed(context, '/profile');
           }
-          // Add other navigation logic here as needed
         },
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),

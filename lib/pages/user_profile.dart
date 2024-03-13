@@ -1,11 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:my_project/logic/models/user.dart';
+import 'package:my_project/logic/services/user_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class UserProfilePage extends StatelessWidget {
-  final String userName = 'Demian Foliush';
-  final String userEmail = 'IoT@gmail.com';
-  final String userImageUrl = 'https://via.placeholder.com/150';
-
+class UserProfilePage extends StatefulWidget {
   const UserProfilePage({super.key});
+
+  @override
+  State<UserProfilePage> createState() => _UserProfilePageState();
+}
+
+class _UserProfilePageState extends State<UserProfilePage> {
+  User? _currentUser;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentUser();
+  }
+
+  Future<void> _loadCurrentUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    final email = prefs.getString('lastLoggedInUser');
+    if (email != null) {
+      final userService = UserService();
+      final user = await userService.getUser(email);
+      if (user != null) {
+        setState(() {
+          _currentUser = user;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,54 +51,32 @@ class UserProfilePage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('User Profile'),
         backgroundColor: Colors.deepOrange,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () {
-            },
-          ),
-        ],
       ),
-      body: Center(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: isTablet ?
-          screenWidth * 0.1 : 16,),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              CircleAvatar(
-                radius: isTablet ? 80 : 50,
-                backgroundImage: NetworkImage(userImageUrl),
-                backgroundColor: Colors.transparent,
-              ),
-              SizedBox(height: isTablet ? 30 : 20),
-              Text(
-                userName,
-                style: titleStyle,
-              ),
-              SizedBox(height: isTablet ? 15 : 10),
-              Text(
-                userEmail,
-                style: emailStyle,
-              ),
-              SizedBox(height: isTablet ? 30 : 20),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  backgroundColor: Colors.deepOrange,
-                  padding: isTablet
-                      ? const EdgeInsets.symmetric(horizontal: 64, vertical: 20)
-                      : null,
+      body: _currentUser == null
+          ? const Center(child: CircularProgressIndicator())
+          : Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isTablet ? screenWidth * 0.1 : 16,
                 ),
-                child: const Text('Log Out'),
-                onPressed: () {
-                  // Implement log out functionality
-                },
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircleAvatar(
+                      radius: isTablet ? 80 : 50,
+                      backgroundImage: const NetworkImage(
+                          'https://via.placeholder.com/150',),
+                      backgroundColor: Colors.transparent,
+                    ),
+                    SizedBox(height: isTablet ? 30 : 20),
+                    Text(_currentUser!.name, style: titleStyle),
+                    SizedBox(height: isTablet ? 15 : 10),
+                    Text(_currentUser!.email, style: emailStyle),
+                    SizedBox(height: isTablet ? 30 : 20),
+                  ],
+                ),
               ),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 }

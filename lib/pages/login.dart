@@ -1,18 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:my_project/logic/services/auth_service.dart';
 import 'package:my_project/widgets/widget_button.dart';
 import 'package:my_project/widgets/widget_text.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final AuthService _authService = AuthService();
 
-  LoginPage({super.key});
+  void _login() async {
+    final String email = _emailController.text;
+    final String password = _passwordController.text;
+    final bool success = await _authService.login(email, password);
+
+    if (success) {
+      if(mounted) {
+        Navigator.pushReplacementNamed(context, '/main');
+      }
+    } else {
+      if(mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Login failed. Please check your credentials.'),),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
-    final isTablet =
-        screenSize.width >= 600;
+    final isTablet = screenSize.width >= 600;
 
     return Scaffold(
       appBar: AppBar(
@@ -57,9 +82,7 @@ class LoginPage extends StatelessWidget {
                   const SizedBox(height: 30),
                   CustomButton(
                     text: 'Login',
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/main');
-                    },
+                    onPressed: _login,
                   ),
                   TextButton(
                     onPressed: () {

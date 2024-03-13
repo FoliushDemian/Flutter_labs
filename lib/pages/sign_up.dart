@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_project/logic/services/auth_service.dart';
 import 'package:my_project/widgets/widget_button.dart';
 import 'package:my_project/widgets/widget_text.dart';
 
@@ -13,6 +14,27 @@ class _RegistrationPageState extends State<RegistrationPage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final AuthService _authService =
+      AuthService();
+
+  void _register() async {
+    final String name = _nameController.text;
+    final String email = _emailController.text;
+    final String password = _passwordController.text;
+
+    final String? result = await _authService.register(name, email, password);
+    if (result == null) {
+      if(mounted) {
+        Navigator.pushReplacementNamed(context,
+          '/',);
+      }
+    } else {
+      if(mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(result),),);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,8 +53,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: EdgeInsets.symmetric(horizontal:
-          horizontalPadding, vertical: 16,),
+          padding: EdgeInsets.symmetric(
+              horizontal: horizontalPadding, vertical: 16,),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -69,14 +91,14 @@ class _RegistrationPageState extends State<RegistrationPage> {
               ),
               const SizedBox(height: 30),
               CustomButton(
-                text: 'Register',
-                onPressed: () {
-                  // Add registration functionality here
-                },
+                text: 'Sign Up',
+                onPressed:
+                    _register,
               ),
               TextButton(
                 onPressed: () {
-                  Navigator.pop(context);
+                  Navigator.pop(
+                      context,);
                 },
                 style: TextButton.styleFrom(
                   foregroundColor: Colors.purple,
