@@ -18,10 +18,10 @@ class MyApp extends StatelessWidget {
       title: 'Finance App',
       initialRoute: '/',
       routes: {
-        '/': (context) => LoginPage(),
+        '/': (context) => const LoginPage(),
         '/registration': (context) => const RegistrationPage(),
         '/profile': (context) => const UserProfilePage(),
-        '/main': (context) => const MainPage(),
+        '/main': (context) => const HomePage(),
       },
     );
   }
