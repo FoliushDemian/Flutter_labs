@@ -1,3 +1,4 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:my_project/logic/services/auth_service.dart';
 import 'package:my_project/widgets/widget_button.dart';
@@ -15,24 +16,74 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _passwordController = TextEditingController();
   final AuthService _authService = AuthService();
 
-  void _login() async {
-    final String email = _emailController.text;
-    final String password = _passwordController.text;
-    final bool success = await _authService.login(email, password);
+  @override
+  void initState() {
+    super.initState();
+  }
 
-    if (success) {
-      if(mounted) {
-        Navigator.pushReplacementNamed(context, '/main');
-      }
-    } else {
-      if(mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Login failed. Please check your credentials.'),),
+  void _showNoInternetDialog() {
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('No Internet Connection'),
+          content: const Text('You are not connected to the internet. '
+              'Please check your connection and try again.'),
+          actions: [
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
         );
+      },
+    );
+  }
+
+  void _login() async {
+    final connectivityResult = await Connectivity().checkConnectivity();
+    if (connectivityResult == ConnectivityResult.none) {
+      _showNoInternetDialog();
+    } else {
+      final email = _emailController.text;
+      final password = _passwordController.text;
+
+      final success = await _authService.login(email, password);
+
+      if (mounted) {
+        if (success) {
+          Navigator.pushReplacementNamed(context, '/main');
+          _showDialog('Success', 'You have successfully logged in.');
+        } else {
+          _showDialog('Failed', 'Invalid email or password.');
+        }
       }
     }
   }
+
+
+  void _showDialog(String title, String content) {
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(content),
+          actions: [
+            TextButton(
+              child: const Text('OK'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {

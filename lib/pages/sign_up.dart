@@ -26,7 +26,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
     if (result == null) {
       if(mounted) {
         Navigator.pushReplacementNamed(context,
-          '/',);
+          '/login',);
       }
     } else {
       if(mounted) {
