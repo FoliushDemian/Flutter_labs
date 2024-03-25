@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_project/pages/auto_login_screen.dart';
 import 'package:my_project/pages/home_page.dart';
 import 'package:my_project/pages/login.dart';
 import 'package:my_project/pages/sign_up.dart';
@@ -16,9 +17,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Finance App',
-      initialRoute: '/',
+      home: const AutoLoginScreen(),
       routes: {
-        '/': (context) => const LoginPage(),
+        '/login': (context) => const LoginPage(),
         '/registration': (context) => const RegistrationPage(),
         '/profile': (context) => const UserProfilePage(),
         '/main': (context) => const HomePage(),
