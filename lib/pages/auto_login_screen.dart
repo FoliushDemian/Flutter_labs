@@ -16,44 +16,52 @@ class _AutoLoginScreenState extends State<AutoLoginScreen> {
     _navigateToNextPage();
   }
 
-  Future<void> _navigateToNextPage() async {
-    final prefs = await SharedPreferences.getInstance();
-    final isLoggedSuccess = prefs.getString('userLogged') != null;
-    final connectivityResult = await (Connectivity().checkConnectivity());
-
-    if (isLoggedSuccess) {
-      if (connectivityResult == ConnectivityResult.none) {
-        _showConnectivityDialog();
-      }
-      if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/main');
-      }
-    } else {
-      if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/login');
-      }
-    }
-  }
-
   void _showConnectivityDialog() {
     showDialog<void>(
       context: context,
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('No Internet Connection'),
-          content: const Text(
-              'You are logged in but not connected to the internet.',),
+          content: const SingleChildScrollView(
+            child: ListBody(
+              children: [
+                Text('You are logged in but not connected to the internet.'),
+              ],
+            ),
+          ),
           actions: [
             TextButton(
               child: const Text('OK'),
               onPressed: () {
                 Navigator.of(context).pop();
+                Navigator.of(context).pushReplacementNamed('/main');
               },
             ),
           ],
         );
       },
     );
+  }
+
+  Future<void> _navigateToNextPage() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isLoggedIn = prefs.getString('userLogged') != null;
+    final connectivityResult = await Connectivity().checkConnectivity();
+
+    if (isLoggedIn) {
+      if (connectivityResult == ConnectivityResult.none) {
+        _showConnectivityDialog();
+      } else {
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed('/main');
+        }
+      }
+    } else {
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed('/login');
+      }
+    }
   }
 
   @override

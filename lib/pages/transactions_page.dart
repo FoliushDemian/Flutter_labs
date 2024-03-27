@@ -10,13 +10,21 @@ class TransactionsPage extends StatefulWidget {
 }
 
 class _TransactionsPageState extends State<TransactionsPage> {
+  final _idController = TextEditingController();
   final _titleController = TextEditingController();
   final _amountController = TextEditingController();
   final TransactionService _service = TransactionService();
 
+  List<Transaction> _transactionList = [];
+  Future<void> _loadTransactionList() async {
+    final data = await _service.loadTransactionList();
+    setState(() => _transactionList = data);
+  }
+
   @override
   void initState() {
     super.initState();
+    _loadTransactionList();
   }
 
   @override
@@ -27,6 +35,13 @@ class _TransactionsPageState extends State<TransactionsPage> {
       ),
       body: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: TextField(
+              controller: _idController,
+              decoration: const InputDecoration(labelText: 'id'),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.all(8),
             child: TextField(
@@ -44,9 +59,11 @@ class _TransactionsPageState extends State<TransactionsPage> {
           ),
           ElevatedButton(
             onPressed: () async {
+              final id = _idController.text;
               final title = _titleController.text;
               final amount = double.tryParse(_amountController.text) ?? 0.0;
               final transaction = Transaction(
+                  id: int.parse(id),
                 title: title,
                 amount: amount,
               );
@@ -63,29 +80,35 @@ class _TransactionsPageState extends State<TransactionsPage> {
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (snapshot.hasData) {
+                  return ListView.builder(
+                    itemCount: snapshot.data!.length,
+                    itemBuilder: (context, index) {
+                      final item = snapshot.data![index];
+                      return ListTile(
+                        title: Text('title: ${item.title}, '
+                            ' amount: ${item.amount}'),
+                        trailing: Wrap(
+                          spacing: 12,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.delete),
+                              onPressed: () async {
+                                await _service
+                                    .deleteTransaction(item.id);
+                                setState(() {});
+                              },
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                } else {
+                  return const Center(child: Text('No data available'));
                 }
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('No transactions found'));
-                }
-                return ListView.builder(
-                  itemCount: snapshot.data!.length,
-                  itemBuilder: (context, index) {
-                    final transaction = snapshot.data![index];
-                    return ListTile(
-                      title: Text(transaction.title),
-                      subtitle: Text(
-                        'Amount: \$${transaction.amount.toStringAsFixed(2)}',
-                      ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () async {
-                          await _service.deleteTransaction(index);
-                          setState(() {});
-                        },
-                      ),
-                    );
-                  },
-                );
               },
             ),
           ),
@@ -94,3 +117,4 @@ class _TransactionsPageState extends State<TransactionsPage> {
     );
   }
 }
+
