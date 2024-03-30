@@ -21,7 +21,7 @@ abstract class AbstractTransactionService {
 class TransactionService implements AbstractTransactionService {
   static const _transactionDataKey = 'transactionData';
   static const currentBalanceKey = 'currentBalance';
-  static const String baseUrl = 'http://10.0.2.2:8080/api/transaction';
+  static const String baseUrl = 'http://10.0.2.2:8080/transaction';
   TransactionLocalStorage transactionLocalStorage= TransactionLocalStorage();
   TransactionService() {
     _initializeBalance();
