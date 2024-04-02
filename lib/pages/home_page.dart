@@ -2,9 +2,7 @@ import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
-import 'package:my_project/logic/services/transaction_service.dart';
 import 'package:my_project/pages/transactions_page.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -14,19 +12,14 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  double? _currentBalance;
-
   final TextStyle subTextStyle =
       const TextStyle(fontSize: 16, color: Colors.green);
-  final transactionService = TransactionService();
 
   late StreamSubscription<ConnectivityResult> _connectivitySubscription;
 
   @override
   void initState() {
     super.initState();
-    transactionService.onBalanceUpdated = _loadBalance;
-    _loadBalance();
     _connectivitySubscription = Connectivity()
         .onConnectivityChanged
         .listen((ConnectivityResult result) {
@@ -60,22 +53,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     _connectivitySubscription.cancel();
-    transactionService.onBalanceUpdated = null;
     super.dispose();
-  }
-
-  void _loadBalance() async {
-    final balance = await getCurrentBalance();
-    if (mounted) {
-      setState(() {
-        _currentBalance = balance;
-      });
-    }
-  }
-
-  Future<double> getCurrentBalance() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getDouble(TransactionService.currentBalanceKey) ?? 5000.00;
   }
 
   @override
@@ -102,32 +80,30 @@ class _HomePageState extends State<HomePage> {
               Card(
                 child: Padding(
                   padding: EdgeInsets.all(isTablet ? 24 : 16),
-                  child: Column(
+                  child: const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Current Balance', style: textStyle),
-                      const SizedBox(height: 10),
-                      if (_currentBalance != null)
-                        Text(
-                          '\$${_currentBalance!.toStringAsFixed(2)}',
-                          style: subTextStyle,
-                        ),
-                      if (_currentBalance == null)
-                        const CircularProgressIndicator(),
-                    ],
                   ),
                 ),
               ),
               SizedBox(height: isTablet ? 40 : 20),
-              GridView.count(
+              GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: isTablet ? 2 : 1,
-                childAspectRatio: 3 / 1,
-                children: [
-                  _dashboardItem(context, 'Transactions', Icons.list_alt),
-                  _dashboardItem(context, 'Settings', Icons.settings),
-                ],
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: isTablet ? 2 : 1,
+                  childAspectRatio: 3 / 1,
+                ),
+                itemCount: 2,
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    return _dashboardItem(
+                      context,
+                      'Transactions',
+                      Icons.list_alt,
+                    );
+                  }
+                  return _dashboardItem(context, 'Settings', Icons.settings);
+                },
               ),
             ],
           ),

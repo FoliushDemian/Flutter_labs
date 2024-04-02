@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:my_project/bloc/events/transactions_events.dart';
+import 'package:my_project/bloc/states/transaction_states.dart';
+import 'package:my_project/bloc/transaction_bloc.dart';
 import 'package:my_project/logic/models/transaction.dart';
-import 'package:my_project/logic/services/transaction_service.dart';
 
 class TransactionsPage extends StatefulWidget {
   const TransactionsPage({super.key});
@@ -13,18 +16,13 @@ class _TransactionsPageState extends State<TransactionsPage> {
   final _idController = TextEditingController();
   final _titleController = TextEditingController();
   final _amountController = TextEditingController();
-  final TransactionService _service = TransactionService();
-
-  List<Transaction> _transactionList = [];
-  Future<void> _loadTransactionList() async {
-    final data = await _service.loadTransactionList();
-    setState(() => _transactionList = data);
-  }
+  late TransactionBloc _transactionBloc;
 
   @override
   void initState() {
     super.initState();
-    _loadTransactionList();
+    _transactionBloc = context.read<TransactionBloc>();
+    _transactionBloc.add(LoadTransaction());
   }
 
   @override
@@ -63,11 +61,12 @@ class _TransactionsPageState extends State<TransactionsPage> {
               final title = _titleController.text;
               final amount = double.tryParse(_amountController.text) ?? 0.0;
               final transaction = Transaction(
-                  id: int.parse(id),
+                id: int.parse(id),
                 title: title,
                 amount: amount,
               );
-              await _service.addTransaction(transaction);
+              BlocProvider.of<TransactionBloc>(context)
+                  .add(AddTransaction(transaction));
               _titleController.clear();
               _amountController.clear();
               setState(() {});
@@ -75,40 +74,35 @@ class _TransactionsPageState extends State<TransactionsPage> {
             child: const Text('Add Transaction'),
           ),
           Expanded(
-            child: FutureBuilder<List<Transaction>>(
-              future: _service.loadTransactionList(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
+            child: BlocBuilder<TransactionBloc, TransactionState>(
+              builder: (context, state) {
+                if (state is TransactionLoading) {
                   return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                } else if (snapshot.hasData) {
+                } else if (state is TransactionLoaded) {
                   return ListView.builder(
-                    itemCount: snapshot.data!.length,
+                    itemCount: state.transactions.length,
                     itemBuilder: (context, index) {
-                      final item = snapshot.data![index];
+                      final item = state.transactions[index];
                       return ListTile(
-                        title: Text('title: ${item.title}, '
-                            ' amount: ${item.amount}'),
+                        title: Text('title: ${item.title},'
+                            ' Amount: ${item.amount}'),
                         trailing: Wrap(
                           spacing: 12,
                           children: [
                             IconButton(
                               icon: const Icon(Icons.delete),
-                              onPressed: () async {
-                                await _service
-                                    .deleteTransaction(item.id);
-                                setState(() {});
-                              },
+                              onPressed: () => _transactionBloc
+                                  .add(DeleteTransaction(item.id)),
                             ),
                           ],
                         ),
                       );
                     },
                   );
-                } else {
-                  return const Center(child: Text('No data available'));
+                } else if (state is TransactionError) {
+                  return Center(child: Text(state.message));
                 }
+                return const Center(child: Text('No data available'));
               },
             ),
           ),
@@ -117,4 +111,3 @@ class _TransactionsPageState extends State<TransactionsPage> {
     );
   }
 }
-

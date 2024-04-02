@@ -1,4 +1,7 @@
 import 'dart:convert';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:http/http.dart' as http;
 import 'package:my_project/logic/models/user.dart';
 import 'package:my_project/logic/services/user_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,9 +24,31 @@ class AuthService implements AbstractAuthService {
     if (existingUser != null) {
       return 'User already exists';
     }
-    final newUser = User(name: name, email: email, password: password);
-    await _userService.saveUser(newUser);
-    return null;
+
+    final connectivityResult = await Connectivity().checkConnectivity();
+    if (connectivityResult == ConnectivityResult.none) {
+      return 'Please connect to the internet to sign up.';
+    }
+
+    const String baseUrl = 'http://10.0.2.2:8080/users';
+    final response = await http.post(
+      Uri.parse('$baseUrl/post'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'name': name,
+        'email': email,
+        'password': password,
+      }),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      final newUser = User(name: name, email: email, password: password);
+      await _userService.saveUser(newUser);
+      return null;
+    } else {
+      return 'Failed to register user';
+    }
+
   }
 
   @override
@@ -44,5 +69,19 @@ class AuthService implements AbstractAuthService {
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('userLogged');
+  }
+
+  Future<User?> getUser() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastLoggedInUserEmail = prefs.getString('userLogged');
+    if (lastLoggedInUserEmail != null) {
+      final userString = prefs.getString(lastLoggedInUserEmail);
+      if (userString != null) {
+        final Map<String, dynamic> userMap =
+        jsonDecode(userString) as Map<String, dynamic>;
+        return User.fromJson(userMap);
+      }
+    }
+    return null;
   }
 }
