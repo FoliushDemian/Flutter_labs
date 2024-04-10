@@ -1,26 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:my_project/logic/models/user.dart';
-import 'package:my_project/logic/services/auth_service.dart';
-import 'package:my_project/logic/services/user_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:my_project/bloc/events/user_events.dart';
+import 'package:my_project/bloc/states/user_states.dart';
+import 'package:my_project/bloc/user_bloc.dart';
 
-class UserProfilePage extends StatefulWidget {
+class UserProfilePage extends StatelessWidget {
   const UserProfilePage({super.key});
 
-  @override
-  State<UserProfilePage> createState() => _UserProfilePageState();
-}
-
-class _UserProfilePageState extends State<UserProfilePage> {
-  User? _currentUser;
-  final AbstractAuthService _authService = AuthService();
-  @override
-  void initState() {
-    super.initState();
-    _loadCurrentUser();
-  }
-
-  void _showLogoutConfirmationDialog() {
+  void _showLogoutConfirmationDialog(BuildContext context) {
     showDialog<void>(
       context: context,
       builder: (BuildContext context) {
@@ -30,16 +17,14 @@ class _UserProfilePageState extends State<UserProfilePage> {
           actions: [
             TextButton(
               child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => Navigator.of(context).pop(),
             ),
             TextButton(
               child: const Text('Log Out'),
-              onPressed: () async {
-                await _authService.logout();
+              onPressed: () {
+                context.read<UserBloc>().add(Logout());
                 Navigator.of(context).pop();
-                Navigator.pushReplacementNamed(context, '/login');
+                Navigator.of(context).pushReplacementNamed('/login');
               },
             ),
           ],
@@ -48,75 +33,61 @@ class _UserProfilePageState extends State<UserProfilePage> {
     );
   }
 
-
-  Future<void> _loadCurrentUser() async {
-    final prefs = await SharedPreferences.getInstance();
-    final email = prefs.getString('userLogged');
-    if (email != null) {
-      final userService = UserService();
-      final user = await userService.getUser(email);
-      if (user != null) {
-        setState(() {
-          _currentUser = user;
-        });
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isTablet = screenWidth >= 600;
-
-    final titleStyle = TextStyle(
-      fontSize: isTablet ? 26 : 24,
-      fontWeight: FontWeight.bold,
-    );
-    final emailStyle = TextStyle(
-      fontSize: isTablet ? 18 : 16,
-      color: Colors.grey[600],
-    );
+    context.read<UserBloc>().add(LoadUser());
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('User Profile'),
-        backgroundColor: Colors.deepOrange,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pushReplacementNamed(context, '/main'),
+          onPressed: () => Navigator.of(context).pushReplacementNamed('/main'),
         ),
-          actions: [
-            TextButton(
-              onPressed: _showLogoutConfirmationDialog,
-              child: const Text('Log Out'),
-            ),
-          ],
+        actions: [
+          TextButton(
+            onPressed: () => _showLogoutConfirmationDialog(context),
+            child: const Text('Log Out', style: TextStyle(color: Colors.blue)),
+          ),
+        ],
       ),
-      body: _currentUser == null
-          ? const Center(child: CircularProgressIndicator())
-          : Center(
+      body: BlocBuilder<UserBloc, UserState>(
+        builder: (context, state) {
+          if (state is UserLoading) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (state is UserLoaded) {
+            return Center(
               child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: isTablet ? screenWidth * 0.1 : 16,
-                ),
+                padding: const EdgeInsets.all(20),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    CircleAvatar(
-                      radius: isTablet ? 80 : 50,
-                      backgroundImage: const NetworkImage(
-                          'https://via.placeholder.com/150',),
+                    const CircleAvatar(
+                      radius: 50,
+                      backgroundImage: NetworkImage(
+                        'https://via.placeholder.com/150',),
                       backgroundColor: Colors.transparent,
                     ),
-                    SizedBox(height: isTablet ? 30 : 20),
-                    Text(_currentUser!.name, style: titleStyle),
-                    SizedBox(height: isTablet ? 15 : 10),
-                    Text(_currentUser!.email, style: emailStyle),
-                    SizedBox(height: isTablet ? 30 : 20),
+                    Text(
+                      'Name: ${state.user.name}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      'Email: ${state.user.email}',
+                      style: const TextStyle(),
+                    ),
                   ],
                 ),
               ),
-            ),
+            );
+          } else if (state is UserError) {
+            return Center(child: Text('Error: ${state.message}'));
+          }
+          return const Center(child: Text('No user data available'));
+        },
+      ),
     );
   }
 }

@@ -1,6 +1,9 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
-import 'package:my_project/logic/services/auth_service.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:my_project/bloc/events/user_events.dart';
+import 'package:my_project/bloc/states/user_states.dart';
+import 'package:my_project/bloc/user_bloc.dart';
 import 'package:my_project/widgets/widget_button.dart';
 import 'package:my_project/widgets/widget_text.dart';
 
@@ -14,7 +17,6 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final AuthService _authService = AuthService();
 
   @override
   void initState() {
@@ -50,19 +52,11 @@ class _LoginPageState extends State<LoginPage> {
       final email = _emailController.text;
       final password = _passwordController.text;
 
-      final success = await _authService.login(email, password);
-
       if (mounted) {
-        if (success) {
-          Navigator.pushReplacementNamed(context, '/main');
-          _showDialog('Success', 'You have successfully logged in.');
-        } else {
-          _showDialog('Failed', 'Invalid email or password.');
-        }
+        context.read<UserBloc>().add(LoginRequested(email, password));
       }
     }
   }
-
 
   void _showDialog(String title, String content) {
     showDialog<void>(
@@ -84,7 +78,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
@@ -98,54 +91,66 @@ class _LoginPageState extends State<LoginPage> {
         ),
         backgroundColor: Colors.teal,
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: isTablet ? 400 : double.infinity,
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TextField(
-                    controller: _emailController,
-                    decoration: const InputDecoration(
-                      hintText: 'Enter your email',
-                      labelText: 'Email',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.email),
+      body: BlocListener<UserBloc, UserState>(
+        listener: (context, state) {
+          if (state is LoginSuccess) {
+            Navigator.pushReplacementNamed(context, '/main');
+            _showDialog('Success', 'You have successfully logged in.');
+          } else if (state is LoginFailure) {
+            _showDialog('Failed', state.error);
+          }
+        },
+
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: isTablet ? 400 : double.infinity,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    TextField(
+                      controller: _emailController,
+                      decoration: const InputDecoration(
+                        hintText: 'Enter your email',
+                        labelText: 'Email',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.email),
+                      ),
+                      keyboardType: TextInputType.emailAddress,
                     ),
-                    keyboardType: TextInputType.emailAddress,
-                  ),
-                  const SizedBox(height: 20),
-                  TextField(
-                    controller: _passwordController,
-                    decoration: const InputDecoration(
-                      hintText: 'Enter your password',
-                      labelText: 'Password',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.lock),
+                    const SizedBox(height: 20),
+                    TextField(
+                      controller: _passwordController,
+                      decoration: const InputDecoration(
+                        hintText: 'Enter your password',
+                        labelText: 'Password',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.lock),
+                      ),
+                      obscureText: true,
                     ),
-                    obscureText: true,
-                  ),
-                  const SizedBox(height: 30),
-                  CustomButton(
-                    text: 'Login',
-                    onPressed: _login,
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/registration');
-                    },
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.teal,
+                    const SizedBox(height: 30),
+                    CustomButton(
+                      text: 'Login',
+                      onPressed: _login,
                     ),
-                    child: const CustomText(
-                        text: 'Don\'t have an account? Register',),
-                  ),
-                ],
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/registration');
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.teal,
+                      ),
+                      child: const CustomText(
+                        text: 'Don\'t have an account? Register',
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
