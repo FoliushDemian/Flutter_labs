@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flash_light_control_plugin/flash_light_control_plugin.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:my_project/pages/transactions_page.dart';
 
@@ -86,6 +88,22 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               SizedBox(height: isTablet ? 40 : 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  ElevatedButton(
+                    onPressed: () =>
+                        _handleFlashlightButton(context, turnOn: true),
+                    child: const Text('Turn On Flashlight'),
+                  ),
+                   ElevatedButton(
+                    onPressed: () =>
+                        _handleFlashlightButton(context, turnOn: false),
+                    child: const Text('Turn Off Flashlight'),
+                  ),
+                ],
+              ),
+              SizedBox(height: isTablet ? 40 : 20),
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -110,6 +128,36 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     );
+  }
+
+  void _handleFlashlightButton(BuildContext context, {required bool turnOn}) {
+    if (kIsWeb || Theme.of(context).platform == TargetPlatform.iOS) {
+      showDialog<void>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Feature Not Supported'),
+            content: const Text(
+              'Flashlight functionality is not supported on this platform.',
+            ),
+            actions: [
+              TextButton(
+                child: const Text('OK'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      if (turnOn) {
+        FlashLightControlPlugin.turnOn();
+      } else {
+        FlashLightControlPlugin.turnOff();
+      }
+    }
   }
 
   Widget _dashboardItem(BuildContext context, String title, IconData icon) {

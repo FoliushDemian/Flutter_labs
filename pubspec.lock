@@ -113,6 +113,15 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "7.0.0"
+  flash_light_control_plugin:
+    dependency: "direct main"
+    description:
+      path: "."
+      ref: HEAD
+      resolved-ref: b68d0ce4e15cb6e6c1ad6d3efceedcdcae07fc0b
+      url: "https://github.com/FoliushDemian/Flashlight-Control.git"
+    source: git
+    version: "0.0.1"
   flutter:
     dependency: "direct main"
     description: flutter
